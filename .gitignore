@@ -5,4 +5,5 @@ __pycache__/
 *.pyd
 *.db
 *.pt
+*.avi
 .DS_Store
