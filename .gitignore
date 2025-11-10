@@ -1,4 +1,5 @@
-.venv/
+.venv_3.11/
+.idea/
 __pycache__/
 *.pyc
 *.pyo
