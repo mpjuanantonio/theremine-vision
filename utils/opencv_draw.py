@@ -151,3 +151,11 @@ class cv_draw:
     #Dibuja el tipo de onda que esta sonando
     def draw_wave_type(frame, wave_type, position=(50, 580)):
         cv_draw.draw_text_with_bg(frame, f'Wave: {wave_type.upper()}',position, bg_color=(200, 100, 200), font_scale=0.9)
+    
+    @staticmethod
+    # Dibuja indicador de gesto detectado
+    def draw_gesture_indicator(frame, gesture_active=False, position=(50, 650)):
+        if gesture_active:
+            cv_draw.draw_text_with_bg(frame, 'PINCH DETECTED', position, bg_color=(0, 255, 0), font_scale=0.8, text_color=(0, 0, 0))
+        else:
+            cv_draw.draw_text_with_bg(frame, 'Pinch left hand to change wave', position, bg_color=(100, 100, 100), font_scale=0.6)

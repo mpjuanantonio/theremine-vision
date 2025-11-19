@@ -20,6 +20,7 @@ class VideoProcessor:
         self.save_video = save_video
         self.avg_fps = []
         self.video_writer = None
+        self.last_results = None  # Almacenar resultados de MediaPipe para gestos
         
         # Inicializar MediaPipe Hands
         self.mp_hands = mp.solutions.hands
@@ -73,6 +74,9 @@ class VideoProcessor:
 
         # Procesar frame con MediaPipe Hands 
         results = self.hands.process(frame_rgb)
+        
+        # Almacenar resultados para acceso externo (para gestos)
+        self.last_results = results
 
         
         process_time = time.time() - start_time

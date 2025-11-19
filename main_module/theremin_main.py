@@ -62,6 +62,7 @@ def theremin_virtual(source=0, size=get_screen_resolution(), wave_type='sine'):
         if video_processor.is_opened():
             print("Procesador de video iniciado")
 
+        last_pinch_state = False  # Estado anterior del pinch para detectar transiciones
         while video_processor.is_opened():
             frame, position_calculator, process_time = video_processor.process_frame()
             
@@ -74,6 +75,25 @@ def theremin_virtual(source=0, size=get_screen_resolution(), wave_type='sine'):
             # Obtener posiciones
             right_y = position_calculator.get_right_hand_y()
             left_x = position_calculator.get_left_hand_x()
+            
+            # Detectar gesto OK en mano izquierda para cambiar onda
+            # El gesto OK se detecta en VideoProcessor, necesitamos acceder a los landmarks
+            pinch_triggered = False
+            if hasattr(video_processor, 'last_results') and video_processor.last_results.multi_hand_landmarks:
+                for hand_idx, hand_landmarks in enumerate(video_processor.last_results.multi_hand_landmarks):
+                    hand_label = video_processor.last_results.multi_handedness[hand_idx].classification[0].label
+                    if hand_label == 'Left':
+                        pinch_triggered = position_calculator.detect_ok_gesture(hand_landmarks, hand_label)
+                        break
+            
+            # Cambiar tipo de onda si se detecta pinch
+            if pinch_triggered and last_pinch_state == False:
+                current_wave_idx = (current_wave_idx + 1) % len(wave_types)
+                synthesizer.wave_type = wave_types[current_wave_idx]
+                last_pinch_state = True
+            elif not pinch_triggered:
+                last_pinch_state = False
+
             
             # Calcular FPS para mostrarlos por pantalla
             fps_avg = video_processor.get_average_fps(process_time)
@@ -93,6 +113,9 @@ def theremin_virtual(source=0, size=get_screen_resolution(), wave_type='sine'):
             
             # Mostrar tipo de onda
             cv_draw.draw_wave_type(frame, synthesizer.wave_type, position=(50, 580))
+            
+            # Mostrar indicador de gesto
+            cv_draw.draw_gesture_indicator(frame, gesture_active=pinch_triggered, position=(50, 650))
             #----------------------------------------------------------------------------------------------------------------------
             
             # Mostrar frame
