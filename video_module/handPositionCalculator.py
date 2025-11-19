@@ -1,10 +1,9 @@
 
+from kalman_filter import KalmanFilter
+
+
 class HandPositionCalculator:
-    """
-    Clase para calcular las posiciones normalizadas de las manos.
-    Mano Derecha: Controla el eje Y (altura)
-    Mano Izquierda: Controla el eje X (anchura)
-    """
+
     
     def __init__(self, frame_width, frame_height):
         self.frame_width = frame_width
@@ -13,8 +12,16 @@ class HandPositionCalculator:
         self.left_hand_x = None   # Posición X de la mano izquierda (0.0 - 1.0)
         
         # Gesture detection
-        self.pinch_threshold = 0.05  # Distancia máxima entre pulgar e índice para detectar pinch
-        self.pinch_detected = False  # Estado actual del pinch
+        # Distancia máxima entre pulgar e índice para detectar pinch
+        # Este valor lo podemos variar para ajustar la sensibilidad del gesto, el unico problema es que si estas muy cerca puede haber muchos falsos negativos y si esta alejado falsos positivos
+        self.pinch_threshold = 0.03  
+        self.pinch_detected = False 
+        
+        # Filtros de Kalman para suavizado de posiciones
+        # process_variance=0.0001: El filtro es bastante restrictivo (suavizado fuerte)
+        # measurement_variance=0.001: Confiamos bastante en las mediciones de MediaPipe
+        self.kalman_x = KalmanFilter(initial_value=0.5, process_variance=0.0001, measurement_variance=0.001)
+        self.kalman_y = KalmanFilter(initial_value=0.5, process_variance=0.0001, measurement_variance=0.001)
     
     def update_hand_position(self, hand_landmarks, hand_label):
         
@@ -34,10 +41,12 @@ class HandPositionCalculator:
         
         if hand_label == 'Right':
             # Mano derecha controla el eje Y (invertido para que arriba = 0.0, abajo = 1.0)
-            self.right_hand_y = float(avg_y)
+            # Aplicar Filtro de Kalman para suavizar la posición
+            self.right_hand_y = self.kalman_y.filter(float(avg_y))
         elif hand_label == 'Left':
             # Mano izquierda controla el eje X
-            self.left_hand_x = float(avg_x)
+            # Aplicar Filtro de Kalman para suavizar la posición
+            self.left_hand_x = self.kalman_x.filter(float(avg_x))
     
     def get_right_hand_y(self):
         return self.right_hand_y
