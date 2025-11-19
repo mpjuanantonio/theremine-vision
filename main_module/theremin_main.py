@@ -22,7 +22,9 @@ from handPositionCalculator import HandPositionCalculator
 from theremin_synthesizer import ThereminSynthesizer
 from audio_video_integration import integrate_audio_with_tracking, draw_audio_info, draw_theremin_guide
 from video_processor import VideoProcessor
+
 from opencv_draw import cv_draw
+from opencv_dynamic import AdvancedVisualizer
 
 #Funcion para obtener resolucion de pantalla, usamos 1440x810 si falla
 def get_screen_resolution():
@@ -61,6 +63,10 @@ def theremin_virtual(source=0, size=get_screen_resolution(), wave_type='sine'):
         video_processor = VideoProcessor(source=source, size=size, save_video=False)
         if video_processor.is_opened():
             print("Procesador de video iniciado")
+        
+        # Inicializar visualizador avanzado
+        advanced_viz = AdvancedVisualizer(frame_width=size[0], frame_height=size[1])
+        print("Visualizador avanzado iniciado")
 
         last_pinch_state = False  # Estado anterior del pinch para detectar transiciones
         while video_processor.is_opened():
@@ -101,6 +107,20 @@ def theremin_virtual(source=0, size=get_screen_resolution(), wave_type='sine'):
             #Bloque de dibujo en pantalla con open-cv -------------------------------------------------------------------------------
             # Dibujar guía del theremín
             draw_theremin_guide(frame)
+            
+            # ===== VISUALIZACIONES AVANZADAS =====
+            info = synthesizer.get_info()
+            current_frequency = info['frequency']
+            current_volume = info['volume'] / 100.0  # Convertir a 0.0-1.0
+            
+            
+            # Rastro de manos
+            advanced_viz.draw_hand_trails(frame, left_hand_x=left_x, right_hand_y=right_y)
+            
+            # Colores dinámicos basados en frecuencia y volumen
+            advanced_viz.draw_dynamic_colors(frame, current_frequency, current_volume, left_x, right_y)
+            
+            # ===== FIN VISUALIZACIONES AVANZADAS =====
             
             # Dibujar información de video
             cv_draw.draw_fps_info(frame, fps_avg, process_time, position=(50, 60))
