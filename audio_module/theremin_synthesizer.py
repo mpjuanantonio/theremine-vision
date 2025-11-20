@@ -107,9 +107,12 @@ class ThereminSynthesizer:
                 # Suavizado
                 self.current_volume = np.mean(self.volume_history)
             else:
-                # Sin mano izquierda detectada, silencio
-                self.current_volume = 0.0
-                self.volume_history.clear()
+                # Bajamos el volumes de forma gradual cuando no esta la mano izquierda para evitar cortes bruscos
+                self.current_volume *= 0.92
+                
+                if self.current_volume < 0.001:
+                    self.current_volume = 0.0
+                    self.volume_history.clear()
     
     def update_parameters(self, vibrato_depth=None, delay_seconds=None):
         """
