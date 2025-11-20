@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Theremín Virtual con Video y Audio
-Programa principal que integra el tracking de manos con síntesis de audio
-"""
 
 import cv2
 import numpy as np

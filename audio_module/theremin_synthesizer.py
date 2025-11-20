@@ -1,7 +1,4 @@
-"""
-Módulo de síntesis de audio para el Theremín Virtual
-Genera audio en tiempo real basado en las posiciones de las manos
-"""
+
 
 import numpy as np
 import pyaudio
@@ -10,11 +7,6 @@ from collections import deque
 
 
 class ThereminSynthesizer:
-    """
-    Sintetizador de theremín que genera audio basado en posiciones de manos. 
-    Genera sonido en base al eje x, que asociamos al volumen, y el eje y, que asociamos al tono (pitch).
-    La mano derecha controla el tono (eje Y) y la mano izquierda controla el volumen (eje X).
-    """
     
     def __init__(self, 
                  sample_rate=44100,
@@ -272,5 +264,7 @@ class ThereminSynthesizer:
             'frequency': self.current_frequency,
             'volume': self.current_volume * 100,  # En porcentaje
             'note': self.get_current_note_name(),
-            'is_playing': self.is_playing
+            'is_playing': self.is_playing,
+            'vibrato_depth': self.vibrato_depth,
+            'delay_seconds': self.delay_seconds
         }

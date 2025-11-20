@@ -35,8 +35,8 @@ class cv_draw:
     # Dibuja un cuadro de texto rectangular en pantalla
     def draw_text_with_bg(frame, text, pos, font_scale=0.6, text_color=COLOR_WHITE, bg_color=COLOR_BLACK):
     
-        thickness = cv_draw.FONT_THICKNESS
-        padding = cv_draw.TEXT_PADDING
+        thickness = 1 # Reducido para un look más limpio
+        padding = 8   # Reducido padding
         
         # Calculamos el tamaño que ocupará el texto dado el font_scale y grosor
         (text_width, text_height), baseline = cv2.getTextSize(text, cv_draw.FONT, font_scale, thickness)
@@ -51,14 +51,36 @@ class cv_draw:
         rect_x2 = rect_x1 + rect_width
         rect_y2 = rect_y1 + rect_height
         
-        # Dibujar rectángulo de fondo
-        cv2.rectangle(frame, (rect_x1, rect_y1), (rect_x2, rect_y2), bg_color, -1)
+        # Dibujar rectángulo de fondo con transparencia (simulada)
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (rect_x1, rect_y1), (rect_x2, rect_y2), bg_color, -1)
+        alpha = 0.7  # Transparencia
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
         
         # Dibujar texto, en este orden para que quede encima del rectángulo
         text_x = rect_x1 + padding
         text_y = rect_y1 + padding + text_height
-        cv2.putText(frame, text, (text_x, text_y), cv_draw.FONT, font_scale, text_color, thickness)
+        cv2.putText(frame, text, (text_x, text_y), cv_draw.FONT, font_scale, text_color, thickness, cv2.LINE_AA)
     
+    @staticmethod
+    # Dibuja una barra de progreso simple
+    def draw_progress_bar(frame, value, max_value, pos, width=150, height=10, color=COLOR_GREEN, label=None):
+        x, y = pos
+        
+        # Fondo de la barra
+        cv2.rectangle(frame, (x, y), (x + width, y + height), (50, 50, 50), -1)
+        
+        # Barra de progreso
+        progress_width = int((value / max_value) * width)
+        progress_width = max(0, min(width, progress_width))
+        cv2.rectangle(frame, (x, y), (x + progress_width, y + height), color, -1)
+        
+        # Borde
+        cv2.rectangle(frame, (x, y), (x + width, y + height), (200, 200, 200), 1)
+        
+        if label:
+            cv2.putText(frame, label, (x, y - 5), cv_draw.FONT, 0.4, (200, 200, 200), 1, cv2.LINE_AA)
+
     @staticmethod
     # Dibuja la etiqueta de la mano en el frame, izq o der junto a la mano
     def draw_hand_label(frame, hand_landmarks, hand_label):
@@ -67,31 +89,54 @@ class cv_draw:
         #Obtenemos las posiciones de la muñeca para usarla como posicion de la etiqueta
         wrist_x, wrist_y = int(wrist.x * ancho), int(wrist.y * altura)
         posicion=(wrist_x - 30, wrist_y - 20)
-        cv2.putText(frame, hand_label, posicion, cv_draw.FONT, 0.7, cv_draw.COLOR_GREEN, 2)
+        cv2.putText(frame, hand_label, posicion, cv_draw.FONT, 0.5, cv_draw.COLOR_GREEN, 1, cv2.LINE_AA)
 
     @staticmethod
     #Dibuja información del audio (frecuencia, nota, volumen)
-    def draw_audio_info(frame, synthesizer, position=(50, 370)):
+    def draw_audio_info(frame, synthesizer, position=(20, 20)):
         #posición (x, y) donde comenzar a dibujar
         info = synthesizer.get_info()
         x, y = position
         
-        # Dibujar información de frecuencia
-        cv_draw.draw_text_with_bg(frame,f'Frequency: {info["frequency"]:.2f} Hz',(x, y), bg_color=cv_draw.COLOR_LIGHT_BLUE,font_scale=1.0       )
+        # Panel de fondo semitransparente para toda la info
+        panel_width = 220
+        panel_height = 230
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (x-10, y-10), (x + panel_width, y + panel_height), (30, 30, 30), -1)
+        cv2.addWeighted(overlay, 0.8, frame, 0.2, 0, frame)
         
-        # Dibujar información de nota
-        cv_draw.draw_text_with_bg(frame, f'Note: {info["note"]}', (x, y + 70), bg_color=cv_draw.COLOR_LIGHT_PURPLE, font_scale=1.0)
+        # Título
+        cv2.putText(frame, "THEREMIN STATUS", (x, y + 15), cv_draw.FONT, 0.5, cv_draw.COLOR_WHITE, 1, cv2.LINE_AA)
         
-        # Dibujar información de volumen
-        cv_draw.draw_text_with_bg(frame, f'Volume: {info["volume"]:.1f}%', (x, y + 140), bg_color=cv_draw.COLOR_LIGHT_ORANGE,font_scale=1.0)
+        current_y = y + 45
+        spacing = 40
         
-        # Indicador visual de si está sonando
-        if info['volume'] > 0:
-            cv2.circle(frame, (x + 400, y + 50), 15, cv_draw.COLOR_GREEN, -1)
-            cv2.putText(frame, 'PLAYING', (x + 420, y + 60), cv_draw.FONT, 0.7, cv_draw.COLOR_GREEN, 2)
-        else:
-            cv2.circle(frame, (x + 400, y + 50), 15, cv_draw.COLOR_GRAY, -1)
-            cv2.putText(frame, 'SILENT', (x + 420, y + 60), cv_draw.FONT, 0.7, cv_draw.COLOR_GRAY, 2)
+        # 1. Nota y Frecuencia
+        note_text = f"{info['note']}"
+        freq_text = f"{info['frequency']:.1f} Hz"
+        cv2.putText(frame, "NOTE / FREQ", (x, current_y - 5), cv_draw.FONT, 0.4, cv_draw.COLOR_GRAY, 1, cv2.LINE_AA)
+        cv2.putText(frame, f"{note_text}  |  {freq_text}", (x, current_y + 15), cv_draw.FONT, 0.6, cv_draw.COLOR_CYAN, 1, cv2.LINE_AA)
+        
+        current_y += spacing + 10
+        
+        # 2. Volumen
+        cv_draw.draw_progress_bar(frame, info['volume'], 100, (x, current_y), width=180, color=cv_draw.COLOR_LIGHT_ORANGE, label="VOLUME")
+        
+        current_y += spacing
+        
+        # 3. Vibrato (Mapeado 0.0 - 0.1 aprox a 0-100 visual)
+        vibrato_pct = (info['vibrato_depth'] / 0.02) * 100 # Escala aproximada para visualización
+        cv_draw.draw_progress_bar(frame, vibrato_pct, 100, (x, current_y), width=180, color=cv_draw.COLOR_LIGHT_PURPLE, label="VIBRATO DEPTH")
+        
+        current_y += spacing
+        
+        # 4. Reverb (Delay) (Mapeado 0.0 - 1.0s a 0-100 visual)
+        reverb_pct = (info['delay_seconds'] / 1.0) * 100
+        cv_draw.draw_progress_bar(frame, reverb_pct, 100, (x, current_y), width=180, color=cv_draw.COLOR_LIGHT_BLUE, label="REVERB (DELAY)")
+        
+        # Indicador de estado (Play/Pause) pequeño en la esquina del panel
+        status_color = cv_draw.COLOR_GREEN if info['volume'] > 0 else cv_draw.COLOR_RED
+        cv2.circle(frame, (x + panel_width - 20, y + 10), 6, status_color, -1)
     
     @staticmethod
     # Dubuja una guía visual del theremín en el frame para que sea mas intuitivo para el usuario
