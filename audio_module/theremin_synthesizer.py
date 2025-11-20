@@ -31,8 +31,8 @@ class ThereminSynthesizer:
         self.buffer_size = buffer_size # Tamaño del buffer
 
         # Configuración de sonido enriquecido
-        self.vibrato_rate = 6.0  # Hz
-        self.vibrato_depth = 0.003  # Profundidad del vibrato
+        self.vibrato_rate = 5.0  # Hz
+        self.vibrato_depth = 0.05  # Profundidad del vibrato
         self.harmonics = [1.0, 0.5, 0.25, 0.125]  # Amplitudes de armónicos (Fundamental, 2do, 3ro, 4to)
 
         # Estado actual, con el que empieza la aplicación
@@ -52,7 +52,7 @@ class ThereminSynthesizer:
         
         # Configuración de Reverb (Eco simple)
         self.reverb_enabled = True
-        self.delay_seconds = 0.25
+        self.delay_seconds = 0.2
         self.delay_feedback = 0.4
         self.delay_mix = 0.3
         self.delay_buffer_size = int(self.sample_rate * self.delay_seconds)
@@ -119,6 +119,23 @@ class ThereminSynthesizer:
                 self.current_volume = 0.0
                 self.volume_history.clear()
     
+    def update_parameters(self, vibrato_depth=None, delay_seconds=None):
+        """
+        Actualiza parámetros de efectos en tiempo real.
+        """
+        with self.lock:
+            if vibrato_depth is not None:
+                self.vibrato_depth = np.clip(vibrato_depth, 0.0, 0.2)
+                
+            if delay_seconds is not None:
+                # Si cambia el tiempo de delay, necesitamos redimensionar el buffer
+                new_delay = np.clip(delay_seconds, 0.0, 2.0)
+                if abs(new_delay - self.delay_seconds) > 0.01:
+                    self.delay_seconds = new_delay
+                    self.delay_buffer_size = int(self.sample_rate * self.delay_seconds)
+                    # Crear nuevo buffer manteniendo datos antiguos si es posible (opcional, aquí reseteamos para simpleza)
+                    self.delay_buffer = np.zeros(self.delay_buffer_size, dtype=np.float32)
+                    self.delay_index = 0
     
     # Calcula la frecuencia basada en la posición normalizada.
     def _calculate_frequency(self, normalized_pitch):
