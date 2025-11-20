@@ -30,6 +30,11 @@ class ThereminSynthesizer:
         self.wave_type = wave_type # Tipo de onda
         self.buffer_size = buffer_size # Tamaño del buffer
 
+        # Configuración de sonido enriquecido
+        self.vibrato_rate = 6.0  # Hz
+        self.vibrato_depth = 0.003  # Profundidad del vibrato
+        self.harmonics = [1.0, 0.5, 0.25, 0.125]  # Amplitudes de armónicos (Fundamental, 2do, 3ro, 4to)
+
         # Estado actual, con el que empieza la aplicación
         self.current_frequency = 440.0  # A4 por defecto
         self.current_volume = 0.0  # Silencio por defecto
@@ -43,7 +48,17 @@ class ThereminSynthesizer:
         self.pyaudio = pyaudio.PyAudio()
         self.stream = None
         self.phase = 0.0
+        self.lfo_phase = 0.0  # Fase para el oscilador de baja frecuencia (LFO)
         
+        # Configuración de Reverb (Eco simple)
+        self.reverb_enabled = True
+        self.delay_seconds = 0.25
+        self.delay_feedback = 0.4
+        self.delay_mix = 0.3
+        self.delay_buffer_size = int(self.sample_rate * self.delay_seconds)
+        self.delay_buffer = np.zeros(self.delay_buffer_size, dtype=np.float32)
+        self.delay_index = 0
+
         # Thread control
         self.lock = threading.Lock()
         
@@ -125,18 +140,41 @@ class ThereminSynthesizer:
     # Genera la onda de audio según el tipo seleccionado. Tenemos varias formas de onda comunes: sine, square, saw, triangle.
     def _generate_wave(self, frequency, num_samples):
         
-        # Calcular el incremento de fase
-        phase_increment = 2 * np.pi * frequency / self.sample_rate
+        # 1. Calcular Vibrato (LFO)
+        # Incremento de fase para el LFO
+        lfo_increment = 2 * np.pi * self.vibrato_rate / self.sample_rate
+        lfo_phases = self.lfo_phase + np.arange(num_samples) * lfo_increment
+        self.lfo_phase = lfo_phases[-1] % (2 * np.pi)
         
-        # Generar índices de fase
-        phases = self.phase + np.arange(num_samples) * phase_increment
+        # Modulación de frecuencia
+        vibrato_val = np.sin(lfo_phases)
+        # La profundidad es un porcentaje de la frecuencia base
+        freq_modulation = 1.0 + (self.vibrato_depth * vibrato_val)
+        instantaneous_freqs = frequency * freq_modulation
         
-        # Actualizar fase para continuidad
+        # 2. Calcular fases de la señal portadora
+        # Incrementos de fase por muestra
+        phase_increments = 2 * np.pi * instantaneous_freqs / self.sample_rate
+        # Fase acumulada
+        phases = self.phase + np.cumsum(phase_increments)
         self.phase = phases[-1] % (2 * np.pi)
         
         # Generar onda según el tipo
         if self.wave_type == 'sine':
-            wave = np.sin(phases)
+            # Síntesis aditiva de armónicos para un sonido más rico
+            wave = np.zeros(num_samples)
+            total_amp = 0
+            
+            for i, amp in enumerate(self.harmonics):
+                harmonic_mult = i + 1
+                # Añadir armónico
+                wave += amp * np.sin(phases * harmonic_mult)
+                total_amp += amp
+            
+            # Normalizar
+            if total_amp > 0:
+                wave /= total_amp
+                
         elif self.wave_type == 'square':
             wave = np.sign(np.sin(phases))
         elif self.wave_type == 'saw':
@@ -154,11 +192,39 @@ class ThereminSynthesizer:
             frequency = self.current_frequency
             volume = self.current_volume
         
-        # Generar onda
+        # Generar onda base
         wave = self._generate_wave(frequency, frame_count)
         
-        # Aplicar volumen
-        audio_data = (wave * volume * 0.3).astype(np.float32)  # 0.3 para evitar clipping
+        # Aplicar volumen inicial
+        dry_signal = (wave * volume).astype(np.float32)
+        
+        # Aplicar Reverb si está habilitado
+        if self.reverb_enabled:
+            # Índices para el buffer circular
+            indices = (self.delay_index + np.arange(frame_count)) % self.delay_buffer_size
+            
+            # Leer señal retardada
+            delayed_signal = self.delay_buffer[indices]
+            
+            # Mezclar señal seca y retardada
+            output_signal = dry_signal + delayed_signal * self.delay_mix
+            
+            # Calcular señal para realimentar al buffer (feedback)
+            feedback_signal = dry_signal + delayed_signal * self.delay_feedback
+            
+            # Escribir en el buffer
+            self.delay_buffer[indices] = feedback_signal
+            
+            # Actualizar índice
+            self.delay_index = (self.delay_index + frame_count) % self.delay_buffer_size
+            
+            # Usar la señal mezclada como salida final
+            final_output = output_signal
+        else:
+            final_output = dry_signal
+            
+        # Aplicar ganancia final para evitar clipping
+        audio_data = (final_output * 0.3).astype(np.float32)
         
         return (audio_data.tobytes(), pyaudio.paContinue)
     

@@ -53,8 +53,9 @@ def theremin_virtual(source=0, size=get_screen_resolution(), wave_type='sine'):
     )
     
     # Iniciar audio
-    if(synthesizer.start()):
-        print("Synthesizer iniciado")
+    synthesizer.start()
+    print("Synthesizer iniciado")
+    
     wave_types = ['sine', 'square', 'saw', 'triangle']
     current_wave_idx = wave_types.index(wave_type)
     
