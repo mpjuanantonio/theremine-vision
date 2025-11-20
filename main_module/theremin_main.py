@@ -102,36 +102,23 @@ def theremin_virtual(source=0, size=get_screen_resolution(), wave_type='sine'):
             fps_avg = video_processor.get_average_fps(process_time)
             
             #Bloque de dibujo en pantalla con open-cv -------------------------------------------------------------------------------
-            # Dibujar guía del theremín
             draw_theremin_guide(frame)
             
-            # ===== VISUALIZACIONES AVANZADAS =====
+
             info = synthesizer.get_info()
             current_frequency = info['frequency']
             current_volume = info['volume'] / 100.0  # Convertir a 0.0-1.0
             
-            
-            # Rastro de manos
             advanced_viz.draw_hand_trails(frame, left_hand_x=left_x, right_hand_y=right_y)
-            
-            # Colores dinámicos basados en frecuencia y volumen
             advanced_viz.draw_dynamic_colors(frame, current_frequency, current_volume, left_x, right_y)
             
-            # ===== FIN VISUALIZACIONES AVANZADAS =====
-            
-            # Dibujar información de video
             cv_draw.draw_fps_info(frame, fps_avg, process_time, position=(50, 60))
-            
-            # Mostrar posiciones de las manos
             cv_draw.draw_hand_position(frame, right_y, left_x, position=(50, 200))
             
-            # Dibujar información de audio
             draw_audio_info(frame, synthesizer, position=(50, 370))
             
-            # Mostrar tipo de onda
             cv_draw.draw_wave_type(frame, synthesizer.wave_type, position=(50, 580))
             
-            # Mostrar indicador de gesto
             cv_draw.draw_gesture_indicator(frame, gesture_active=pinch_triggered, position=(50, 650))
             #----------------------------------------------------------------------------------------------------------------------
             

@@ -144,17 +144,45 @@ class cv_draw:
     
         altura, ancho, _ = frame.shape
         
-        # Línea vertical para el tono (derecha) - mano derecha
-        cv2.line(frame, (ancho- 100, 100), (ancho- 100, altura- 100), cv_draw.COLOR_PINK, 3)
-        cv2.putText(frame, 'PITCH', (ancho- 150, 80), cv_draw.FONT, 0.6, cv_draw.COLOR_PINK, 2)
-        cv2.putText(frame, 'HIGH', (ancho- 150, 120), cv_draw.FONT, 0.5, cv_draw.COLOR_PINK, 1)
-        cv2.putText(frame, 'LOW', (ancho- 150, altura- 110), cv_draw.FONT, 0.5, cv_draw.COLOR_PINK, 1)
+        # Definir límites de zonas
+        left_zone_limit = int(ancho * 0.5)   # Zona izquierda ampliada al 50%
+        right_zone_start = int(ancho * 0.75) # Zona derecha reducida (empieza al 75%)
         
-        # Línea horizontal para el volumen (izquierda) - mano izquierda
-        cv2.line(frame, (100, altura- 100), (400, altura- 100), cv_draw.COLOR_LIGHT_CYAN, 3)
-        cv2.putText(frame, 'VOLUME', (100, altura- 110), cv_draw.FONT, 0.6, cv_draw.COLOR_LIGHT_CYAN, 2)
-        cv2.putText(frame, 'OFF', (80, altura- 70), cv_draw.FONT, 0.5, cv_draw.COLOR_LIGHT_CYAN, 1)
-        cv2.putText(frame, 'MAX', (380, altura- 70), cv_draw.FONT, 0.5, cv_draw.COLOR_LIGHT_CYAN, 1)
+        # --- ZONA DERECHA (PITCH) ---
+        # Dibujar área semitransparente para la zona derecha
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (right_zone_start, 0), (ancho, altura), (50, 0, 50), -1)
+        cv2.addWeighted(overlay, 0.1, frame, 0.9, 0, frame)
+        
+        # Línea vertical guía (centrada en la zona derecha)
+        pitch_guide_x = right_zone_start + (ancho - right_zone_start) // 2
+        cv2.line(frame, (pitch_guide_x, 50), (pitch_guide_x, altura - 50), cv_draw.COLOR_PINK, 2)
+        
+        # Etiquetas
+        cv2.putText(frame, 'PITCH ZONE', (right_zone_start + 20, 40), cv_draw.FONT, 0.6, cv_draw.COLOR_PINK, 1, cv2.LINE_AA)
+        cv2.putText(frame, 'HIGH', (pitch_guide_x + 10, 80), cv_draw.FONT, 0.5, cv_draw.COLOR_PINK, 1, cv2.LINE_AA)
+        cv2.putText(frame, 'LOW', (pitch_guide_x + 10, altura - 80), cv_draw.FONT, 0.5, cv_draw.COLOR_PINK, 1, cv2.LINE_AA)
+        
+        # --- ZONA IZQUIERDA (VOLUMEN / REVERB) ---
+        # Dibujar área semitransparente para la zona izquierda
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (0, 0), (left_zone_limit, altura), (50, 50, 0), -1)
+        cv2.addWeighted(overlay, 0.1, frame, 0.9, 0, frame)
+        
+        # Línea límite vertical
+        cv2.line(frame, (left_zone_limit, 0), (left_zone_limit, altura), (100, 100, 100), 1, cv2.LINE_AA)
+        
+        # Guía Volumen (Horizontal)
+        cv2.line(frame, (20, altura - 50), (left_zone_limit - 20, altura - 50), cv_draw.COLOR_LIGHT_CYAN, 2)
+        cv2.putText(frame, 'VOLUME ZONE', (20, 40), cv_draw.FONT, 0.6, cv_draw.COLOR_LIGHT_CYAN, 1, cv2.LINE_AA)
+        cv2.putText(frame, 'MIN', (20, altura - 60), cv_draw.FONT, 0.4, cv_draw.COLOR_LIGHT_CYAN, 1, cv2.LINE_AA)
+        cv2.putText(frame, 'MAX', (left_zone_limit - 50, altura - 60), cv_draw.FONT, 0.4, cv_draw.COLOR_LIGHT_CYAN, 1, cv2.LINE_AA)
+        
+        # Guía Reverb (Vertical en zona izquierda)
+        cv2.line(frame, (20, 100), (20, altura - 100), cv_draw.COLOR_LIGHT_BLUE, 2)
+        cv2.putText(frame, 'REVERB', (30, altura // 2), cv_draw.FONT, 0.5, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
+        cv2.putText(frame, '+', (10, 90), cv_draw.FONT, 0.8, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
+        cv2.putText(frame, '-', (10, altura - 80), cv_draw.FONT, 0.8, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
     
     @staticmethod
     # Dibuja los fps y tiempo de procesamiento en el frame

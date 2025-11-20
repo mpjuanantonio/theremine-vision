@@ -101,8 +101,22 @@ class VideoProcessor:
                     self.mp_drawing_styles.get_default_hand_connections_style()
                 )
                 
-                # Dibujar etiqueta de la mano
+                # Dibujar línea de vibrato (entre pulgar e índice) solo para mano derecha
                 h, w, _ = frame.shape
+                if hand_label == 'Right':
+                    thumb_tip = hand_landmarks.landmark[4]
+                    index_tip = hand_landmarks.landmark[8]
+                    
+                    thumb_x, thumb_y = int(thumb_tip.x * w), int(thumb_tip.y * h)
+                    index_x, index_y = int(index_tip.x * w), int(index_tip.y * h)
+                    
+                    # Dibujar línea
+                    cv2.line(frame, (thumb_x, thumb_y), (index_x, index_y), (255, 0, 255), 2)
+                    # Dibujar puntos en los extremos
+                    cv2.circle(frame, (thumb_x, thumb_y), 4, (255, 0, 255), -1)
+                    cv2.circle(frame, (index_x, index_y), 4, (255, 0, 255), -1)
+                
+                # Dibujar etiqueta de la mano
                 wrist = hand_landmarks.landmark[0]
                 wrist_x, wrist_y = int(wrist.x * w), int(wrist.y * h)
                 cv2.putText(frame, hand_label, (wrist_x - 30, wrist_y - 20),
