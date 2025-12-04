@@ -107,7 +107,7 @@ class ThereminSynthesizer:
                 # Suavizado
                 self.current_volume = np.mean(self.volume_history)
             else:
-                # Bajamos el volumes de forma gradual cuando no esta la mano izquierda para evitar cortes bruscos
+                # Bajamos el volumen de forma gradual cuando no esta la mano izquierda para evitar cortes bruscos
                 self.current_volume *= 0.92
                 
                 if self.current_volume < 0.001:
@@ -115,9 +115,7 @@ class ThereminSynthesizer:
                     self.volume_history.clear()
     
     def update_parameters(self, vibrato_depth=None, delay_seconds=None):
-        """
-        Actualiza parámetros de efectos en tiempo real.
-        """
+
         with self.lock:
             if vibrato_depth is not None:
                 self.vibrato_depth = np.clip(vibrato_depth, 0.0, 0.2)
@@ -151,9 +149,8 @@ class ThereminSynthesizer:
 
     # Genera la onda de audio según el tipo seleccionado. Tenemos varias formas de onda comunes: sine, square, saw, triangle.
     def _generate_wave(self, frequency, num_samples):
-        
-        # 1. Calcular Vibrato (LFO)
-        # Incremento de fase para el LFO
+
+        # Calcular frecuencia instantánea con vibrato
         lfo_increment = 2 * np.pi * self.vibrato_rate / self.sample_rate
         lfo_phases = self.lfo_phase + np.arange(num_samples) * lfo_increment
         self.lfo_phase = lfo_phases[-1] % (2 * np.pi)
@@ -164,7 +161,7 @@ class ThereminSynthesizer:
         freq_modulation = 1.0 + (self.vibrato_depth * vibrato_val)
         instantaneous_freqs = frequency * freq_modulation
         
-        # 2. Calcular fases de la señal portadora
+        #Calcular fases de la señal portadora
         # Incrementos de fase por muestra
         phase_increments = 2 * np.pi * instantaneous_freqs / self.sample_rate
         # Fase acumulada

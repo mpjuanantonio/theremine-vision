@@ -1,5 +1,4 @@
 
-from kalman_filter import KalmanFilter
 
 
 class HandPositionCalculator:
@@ -21,12 +20,6 @@ class HandPositionCalculator:
         self.pinch_threshold = 0.03  
         self.pinch_detected = False 
         
-        # Filtros de Kalman para suavizado de posiciones
-        # process_variance=0.0001: El filtro es bastante restrictivo (suavizado fuerte)
-        # measurement_variance=0.001: Confiamos bastante en las mediciones de MediaPipe
-        self.kalman_x = KalmanFilter(initial_value=0.5, process_variance=0.0001, measurement_variance=0.001)
-        self.kalman_y = KalmanFilter(initial_value=0.5, process_variance=0.0001, measurement_variance=0.001)
-        self.kalman_left_y = KalmanFilter(initial_value=0.5, process_variance=0.0001, measurement_variance=0.001)
     
     def update_hand_position(self, hand_landmarks, hand_label):
         
@@ -47,18 +40,23 @@ class HandPositionCalculator:
         # Calcular distancia de pinch (pulgar a índice)
         thumb = hand_landmarks.landmark[4]
         index = hand_landmarks.landmark[8]
+
+        # Calculamos la distancia de pinch entre en pulgar e índice
+        # Para la mano derecha lo usamos para el vibrato y para la izquierda para detectar el gesto de OK
         pinch_dist = ((thumb.x - index.x)**2 + (thumb.y - index.y)**2)**0.5
         
         if hand_label == 'Right':
             # Mano derecha controla el eje Y (invertido para que arriba = 0.0, abajo = 1.0)
-            # Aplicar Filtro de Kalman para suavizar la posición
-            self.right_hand_y = self.kalman_y.filter(float(avg_y))
+        
+            self.right_hand_y = avg_y  
+            
             self.right_hand_pinch = pinch_dist
         elif hand_label == 'Left':
             # Mano izquierda controla el eje X
-            # Aplicar Filtro de Kalman para suavizar la posición
-            self.left_hand_x = self.kalman_x.filter(float(avg_x))
-            self.left_hand_y = self.kalman_left_y.filter(float(avg_y))
+            
+            self.left_hand_x = avg_x 
+            self.left_hand_y = avg_y  
+
             self.left_hand_pinch = pinch_dist
     
     def get_right_hand_y(self):
@@ -76,7 +74,7 @@ class HandPositionCalculator:
     def get_left_hand_pinch(self):
         return self.left_hand_pinch
     
-    # Detecta un gesto de ok (pulgar e índice juntos mientras otros dedos están extendidos).
+    # Detecta un gesto de ok .
     def detect_ok_gesture(self, hand_landmarks, hand_label):
             
 
@@ -97,12 +95,14 @@ class HandPositionCalculator:
         thumb_index_distance = ((thumb.x - index.x)**2 + (thumb.y - index.y)**2)**0.5
         
         # Comprobamos que indice y pulgar están juntos
-        thumb_index_close = thumb_index_distance < self.pinch_threshold  # 0.05
+        thumb_index_close = thumb_index_distance < self.pinch_threshold  
         
-        # Comprobamos que los otros dedos están algo extendidos para evitar falsos positivos como cerrar el puño
+        # Calculamos distancias de los otros dedos al pulgar
         thumb_middle_distance = ((thumb.x - middle.x)**2 + (thumb.y - middle.y)**2)**0.5
         thumb_ring_distance = ((thumb.x - ring.x)**2 + (thumb.y - ring.y)**2)**0.5
         thumb_pinky_distance = ((thumb.x - pinky.x)**2 + (thumb.y - pinky.y)**2)**0.5
+
+        # Comprobamos que el valor sea mayor que un umbral para saber si los dedos estan abiertos
         other_fingers_open = (thumb_middle_distance > 0.08 and 
                               thumb_ring_distance > 0.08 and 
                               thumb_pinky_distance > 0.08)

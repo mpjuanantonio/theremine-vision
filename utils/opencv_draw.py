@@ -130,8 +130,12 @@ class cv_draw:
         
         current_y += spacing
         
-        # 4. Reverb (Delay) (Mapeado 0.0 - 1.0s a 0-100 visual)
-        reverb_pct = (info['delay_seconds'] / 1.0) * 100
+        # 4. Reverb (Delay) (Mapeado 0.1s - 0.8s a 0-100 visual)
+        # El delay va de 0.1s (mínimo) a 0.8s (máximo), normalizamos a ese rango
+        delay_min = 0.1
+        delay_max = 0.8
+        reverb_pct = ((info['delay_seconds'] - delay_min) / (delay_max - delay_min)) * 100
+        reverb_pct = max(0, min(100, reverb_pct))  # Clamp entre 0 y 100
         cv_draw.draw_progress_bar(frame, reverb_pct, 100, (x, current_y), width=180, color=cv_draw.COLOR_LIGHT_BLUE, label="REVERB (DELAY)")
         
         # Indicador de estado (Play/Pause) pequeño en la esquina del panel
@@ -179,10 +183,13 @@ class cv_draw:
         cv2.putText(frame, 'MAX', (left_zone_limit - 50, altura - 60), cv_draw.FONT, 0.4, cv_draw.COLOR_LIGHT_CYAN, 1, cv2.LINE_AA)
         
         # Guía Reverb (Vertical en zona izquierda)
-        cv2.line(frame, (20, 100), (20, altura - 100), cv_draw.COLOR_LIGHT_BLUE, 2)
-        cv2.putText(frame, 'REVERB', (30, altura // 2), cv_draw.FONT, 0.5, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
-        cv2.putText(frame, '+', (10, 90), cv_draw.FONT, 0.8, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
-        cv2.putText(frame, '-', (10, altura - 80), cv_draw.FONT, 0.8, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
+        # Ajustado al rango útil: 30% - 85% de la altura
+        reverb_top = int(altura * 0.30)      # Donde empieza el máximo reverb
+        reverb_bottom = int(altura * 0.85)   # Donde termina el mínimo reverb
+        
+        cv2.line(frame, (20, reverb_top), (20, reverb_bottom), cv_draw.COLOR_LIGHT_BLUE, 2)
+        cv2.putText(frame, '+', (10, reverb_top - 10), cv_draw.FONT, 0.8, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
+        cv2.putText(frame, '-', (10, reverb_bottom + 20), cv_draw.FONT, 0.8, cv_draw.COLOR_LIGHT_BLUE, 1, cv2.LINE_AA)
     
     @staticmethod
     # Dibuja los fps y tiempo de procesamiento en el frame

@@ -12,6 +12,25 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from theremin_synthesizer import ThereminSynthesizer
 from opencv_draw import cv_draw
 
+# ---------------CONSTANTES DE CONFIGURACIÓN ----------------------
+
+# Volumen - Zona de control mano izquierda (eje X)
+LEFT_ZONE_LIMIT = 0.5   #Restricción para que no se cruce la zona con la otra mano
+
+# Vibrato
+PINCH_MIN = 0.02        # Distancia minima para minimo vibrato
+PINCH_MAX = 0.15        # Distancia maxima para maximo vibrato
+VIBRATO_MIN = 0.001     # Profundidad minima de vibrato
+VIBRATO_MAX = 0.02      # Profundidad maxima de vibrato
+
+# Reverb 
+REVERB_TOP = 0.30      # Posición Y para reverb máximo
+REVERB_BOTTOM = 0.85   # Posición Y para reverb mínimo
+DELAY_MAX = 0.8        # Segundos máx de reverb
+DELAY_MIN = 0.1        # Segundos mín de reverb
+
+#------------------------------- ----------------------
+
 
 def integrate_audio_with_tracking(position_calculator, synthesizer):
     
@@ -19,9 +38,7 @@ def integrate_audio_with_tracking(position_calculator, synthesizer):
     left_x = position_calculator.get_left_hand_x()
     left_y = position_calculator.get_left_hand_y()
     
-    
-    LEFT_ZONE_LIMIT = 0.5
-
+    # Mapear posición X mano izquierda a volumen
     mapped_left_x = None
     if left_x is not None:
         if left_x <= LEFT_ZONE_LIMIT:
@@ -32,22 +49,22 @@ def integrate_audio_with_tracking(position_calculator, synthesizer):
     
     right_pinch = position_calculator.get_right_hand_pinch()
 
+    # CALCULO DEL VIBRATO
     vibrato_depth = None
     if right_pinch is not None:
-        # Normalizar pinch (asumiendo rango útil 0.02 - 0.15)
-        norm_pinch = max(0.0, min(1.0, (right_pinch - 0.02) / (0.15 - 0.02)))
-        # Usuario pidió: "normalizando la distancia... siendo 0.1 el vibrato maximo y 0.01 el minimo"
-        
-        vibrato_depth = 0.001 + (norm_pinch * 0.02) 
+        # Normalizar pinch y calculamos la profundidad del vibrato
+        norm_pinch = max(0.0, min(1.0, (right_pinch - PINCH_MIN) / (PINCH_MAX - PINCH_MIN)))
+        vibrato_depth = VIBRATO_MIN + (norm_pinch * VIBRATO_MAX) 
 
-    # Mapear altura mano izquierda (Eje Y) a tiempo de delay (Reverb)
-    # Rango Y: 0.0 (arriba) a 1.0 (abajo) -> Delay: 0.1s a 0.8s
+    # CALCULO DE LA REVERB
     delay_seconds = None
     if left_y is not None:
-        # Invertimos: Arriba (0.0) = Más eco (0.8s), Abajo (1.0) = Menos eco (0.1s)
-        # O al revés? Normalmente subir la mano = aumentar efecto
-        # Vamos a hacer: Arriba (0.0) = 0.8s, Abajo (1.0) = 0.1s
-        delay_seconds = 0.8 - (left_y * 0.7) # 0.8s a 0.1s
+        # Normalizar al rango útil
+        normalized_y = (left_y - REVERB_TOP) / (REVERB_BOTTOM - REVERB_TOP)
+        normalized_y = max(0.0, min(1.0, normalized_y))  # Clamp entre 0 y 1
+        
+        # Invertimos: Arriba = Más rev, Abajo = Menos rev
+        delay_seconds = DELAY_MAX - (normalized_y * (DELAY_MAX - DELAY_MIN))
 
     synthesizer.update_position(right_y, mapped_left_x)
     synthesizer.update_parameters(vibrato_depth=vibrato_depth, delay_seconds=delay_seconds)
