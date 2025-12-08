@@ -1,10 +1,29 @@
 # Installation Guide
 
+## Table of Contents
+
+- [System Requirements](#system-requirements)
+- [Quick installation](#quick-installation)
+  - [Linux Installation](#linux-installation)
+  - [Windows Installation](#windows-installation)
+- [Step-by-Step Installation (Linux)](#step-by-step-installation-linux)
+- [Step-by-Step Installation (Windows)](#step-by-step-installation-windows)
+- [Activate Virtual Environment](#activate-virtual-environment)
+- [Deactivate Virtual Environment](#deactivate-virtual-environment)
+- [Installation Troubleshooting](#installation-troubleshooting)
+- [System Verification](#system-verification)
+- [Complete Uninstallation](#complete-uninstallation)
+- [Clean Project Reinstallation](#clean-project-reinstallation)
+- [Additional Troubleshooting](#additional-troubleshooting)
+- [Next Steps](#next-steps)
+
+---
+
 ## System Requirements
 
 ### Operating System
-- Linux (Ubuntu 22.04 or later recommended)
-- Other Linux distributions compatible with apt-get
+- **Linux**: Ubuntu 22.04 or later recommended (other distributions compatible with apt-get)
+- **Windows**: Windows 10/11
 
 ### Python Version
 | Version | Status | Recommendation |
@@ -16,24 +35,13 @@
 ### Hardware
 - Functional webcam
 - Audio output device (speakers)
-- Microphone not required
+- Microphone NOT required
 
 ---
 
-## Quick Installation (5 minutes)
+## Quick Installation
 
-### Option 1: Automated Script (Recommended)
-
-```bash
-# Clone repository
-git clone https://github.com/mpjuanantonio/theremine-vision.git
-cd theremine-vision
-
-# Run installation script
-bash setup.sh
-```
-
-### Option 2: Manual Commands
+### Linux Installation
 
 ```bash
 # 1. Install system dependencies
@@ -61,7 +69,30 @@ python main_module/theremin_main.py
 
 ---
 
-## Step-by-Step Installation
+### Windows Installation
+
+#### Quick Installation (5 minutes)
+
+```cmd
+REM 1. Clone repository
+git clone https://github.com/mpjuanantonio/theremine-vision.git
+cd theremine-vision
+
+REM 2. Create virtual environment
+python -m venv .venv
+
+REM 3. Install dependencies
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+REM 4. Run the program
+.\.venv\Scripts\python.exe main_module/theremin_main.py
+```
+
+**Note for Windows**: System dependencies like PortAudio are included in the PyAudio wheel package, so no additional system installations are required.
+
+---
+
+## Step-by-Step Installation (Linux)
 
 ### Step 1: Verify Python Version
 
@@ -86,6 +117,7 @@ sudo apt-get install python3.11-dev python3.11-venv portaudio19-dev python3-tk
 ```
 
 **What gets installed:**
+
 - `python3.11-dev`: Python headers for compiling extensions
 - `python3.11-venv`: Virtual environment tool
 - `portaudio19-dev`: Audio libraries for PyAudio
@@ -126,6 +158,7 @@ pip install -r requirements.txt
 ```
 
 **Dependencies that will be installed:**
+
 - `opencv-python`: Video capture and processing
 - `numpy`: Numerical computations
 - `mediapipe`: Hand detection and tracking
@@ -141,11 +174,73 @@ python -c "import cv2, numpy, mediapipe, pyaudio; print('All libraries installed
 
 If you see "All libraries installed successfully", you are ready to go!
 
+### Step 7: Run the Program
+
+```bash
+python main_module/theremin_main.py
+```
+
 ---
 
-## Activate/Deactivate Virtual Environment
+## Step-by-Step Installation (Windows)
 
-### Activate (required each time you open a new terminal)
+### Step 1: Verify Python Version
+
+Open Command Prompt (cmd) or PowerShell and check:
+
+```cmd
+python --version
+REM Should display 3.10.x, 3.11.x or 3.12.x
+```
+
+If Python is not installed, download and install it from [python.org](https://www.python.org/downloads/).
+
+### Step 2: Clone Repository
+
+```cmd
+git clone https://github.com/mpjuanantonio/theremine-vision.git
+cd theremine-vision
+```
+
+### Step 3: Create Virtual Environment
+
+```cmd
+python -m venv .venv
+```
+
+### Step 4: Install Python Dependencies
+
+```cmd
+.\.venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+**Dependencies that will be installed:**
+
+- `opencv-python`: Video capture and processing
+- `numpy`: Numerical computations
+- `mediapipe`: Hand detection and tracking
+- `pyaudio`: Real-time audio synthesis (includes PortAudio binaries)
+
+### Step 5: Verify Installation
+
+```cmd
+.\.venv\Scripts\python.exe -c "import cv2, numpy, mediapipe, pyaudio; print('All libraries installed successfully')"
+```
+
+If you see "All libraries installed successfully", you are ready to go!
+
+### Step 6: Run the Program
+
+```cmd
+.\.venv\Scripts\python.exe main_module\theremin_main.py
+```
+
+---
+
+## Activate Virtual Environment
+
+### Linux
 
 ```bash
 cd ~/theremine-vision
@@ -154,17 +249,32 @@ source .venv/bin/activate
 
 **Indicator**: Your prompt should show `(.venv)` at the beginning.
 
-### Deactivate (when finished)
+### Windows
+
+```cmd
+cd theremine-vision
+.\.venv\Scripts\activate.bat
+```
+
+**Indicator**: Your prompt should show `(.venv)` at the beginning.
+
+---
+
+## Deactivate Virtual Environment
 
 ```bash
 deactivate
 ```
 
+This works on both Linux and Windows.
+
 ---
 
 ## Installation Troubleshooting
 
-### Error: `Python.h: No such file or directory`
+### Linux-specific Issues
+
+#### Error: `Python.h: No such file or directory`
 
 **Cause**: Python headers are missing
 
@@ -173,7 +283,7 @@ deactivate
 sudo apt-get install python3.11-dev
 ```
 
-### Error: `portaudio.h: No such file or directory`
+#### Error: `portaudio.h: No such file or directory`
 
 **Cause**: PortAudio libraries are missing
 
@@ -182,20 +292,7 @@ sudo apt-get install python3.11-dev
 sudo apt-get install portaudio19-dev
 ```
 
-### Error: `No module named 'cv2'` or similar
-
-**Cause**: Virtual environment not activated or dependencies not installed
-
-**Solution**:
-```bash
-# Verify activation
-source .venv/bin/activate
-
-# Reinstall dependencies
-pip install -r requirements.txt
-```
-
-### Error: `command not found: python3.11`
+#### Error: `command not found: python3.11`
 
 **Cause**: Python 3.11 not installed
 
@@ -204,27 +301,7 @@ pip install -r requirements.txt
 sudo apt-get install python3.11
 ```
 
-### Error: "Permission denied" when running setup.sh
-
-**Cause**: Script is not executable
-
-**Solution**:
-```bash
-chmod +x setup.sh
-bash setup.sh
-```
-
-### PyAudio compilation fails
-
-**Cause**: Missing development tools
-
-**Solution**:
-```bash
-sudo apt-get install build-essential python3.11-dev portaudio19-dev
-pip install --no-cache-dir pyaudio
-```
-
-### Error: `No module named 'tkinter'`
+#### Error: `No module named 'tkinter'`
 
 **Cause**: Tkinter not installed (needed for fullscreen detection)
 
@@ -233,12 +310,57 @@ pip install --no-cache-dir pyaudio
 sudo apt-get install python3-tk
 ```
 
+### Windows-specific Issues
+
+#### Error: `python: command not found`
+
+**Cause**: Python not added to PATH during installation
+
+**Solution**: Reinstall Python and check "Add Python to PATH" option, or add it manually to system environment variables.
+
+#### Error: PyAudio installation fails
+
+**Cause**: Missing Visual C++ compiler (rare, as wheels are pre-built)
+
+**Solution**: Install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) or try installing a pre-built wheel:
+```cmd
+pip install pipwin
+pipwin install pyaudio
+```
+
+### Common Issues (All Platforms)
+
+#### Error: `No module named 'cv2'` or similar
+
+**Cause**: Virtual environment not activated or dependencies not installed
+
+**Solution**:
+
+**Linux:**
+```bash
+# Verify activation
+source .venv/bin/activate
+
+# Reinstall dependencies
+pip install -r requirements.txt
+```
+
+**Windows:**
+```cmd
+REM Verify activation
+.\.venv\Scripts\activate.bat
+
+REM Reinstall dependencies
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
 ---
 
 ## System Verification
 
 Before running the application, verify:
 
+**Linux:**
 ```bash
 # 1. Correct Python version
 python --version
@@ -256,12 +378,27 @@ ls -la /dev/video*
 python -c "import pyaudio; print('Audio functional')"
 ```
 
+**Windows:**
+```cmd
+REM 1. Correct Python version
+python --version
+
+REM 2. Virtual environment activated (check prompt for .venv)
+
+REM 3. Libraries installed
+.\.venv\Scripts\python.exe -m pip list | findstr "opencv numpy mediapipe pyaudio"
+
+REM 4. Audio functional
+.\.venv\Scripts\python.exe -c "import pyaudio; print('Audio functional')"
+```
+
 ---
 
 ## Complete Uninstallation
 
 If you need to start fresh:
 
+**Linux:**
 ```bash
 # Remove virtual environment
 rm -rf .venv
@@ -276,10 +413,25 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+**Windows:**
+```cmd
+REM Remove virtual environment
+rmdir /s /q .venv
+
+REM Remove Python cache
+for /d /r %i in (__pycache__) do @rmdir /s /q "%i" 2>nul
+del /s /q *.pyc 2>nul
+
+REM Reinstall
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
 ---
 
 ## Clean Project Reinstallation
 
+**Linux:**
 ```bash
 # Go to parent directory
 cd ~
@@ -297,12 +449,30 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+**Windows:**
+```cmd
+REM Go to parent directory
+cd ..
+
+REM Remove previous installation
+rmdir /s /q theremine-vision
+
+REM Clone again
+git clone https://github.com/mpjuanantonio/theremine-vision.git
+cd theremine-vision
+
+REM Install
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
 ---
 
 ## Additional Troubleshooting
 
 ### Application runs but camera not detected
 
+**Linux:**
 ```bash
 # Check available cameras
 ls -la /dev/video*
@@ -311,14 +481,29 @@ ls -la /dev/video*
 python main_module/theremin_main.py --source 1
 ```
 
+**Windows:**
+```cmd
+REM Try another camera if available
+.\.venv\Scripts\python.exe main_module\theremin_main.py --source 1
+```
+
 ### No audio output
 
+**Linux:**
 ```bash
 # Verify audio
 python -c "import pyaudio; print(pyaudio.PyAudio().get_device_count())"
 
 # Check system volume
 alsamixer
+```
+
+**Windows:**
+```cmd
+REM Verify audio
+.\.venv\Scripts\python.exe -c "import pyaudio; print(pyaudio.PyAudio().get_device_count())"
+
+REM Check system volume in Windows settings
 ```
 
 ### Unstable or choppy values
@@ -329,12 +514,21 @@ alsamixer
 
 ### Fullscreen not working
 
+**Linux:**
 ```bash
 # Verify tkinter is installed
 python -c "import tkinter; print('Tkinter OK')"
 
 # Run with custom resolution if needed
 python main_module/theremin_main.py --width 1280 --height 720
+```
+
+**Windows:**
+```cmd
+REM Tkinter is included with Python on Windows
+
+REM Run with custom resolution if needed
+.\.venv\Scripts\python.exe main_module\theremin_main.py --width 1280 --height 720
 ```
 
 ---
@@ -345,7 +539,3 @@ python main_module/theremin_main.py --width 1280 --height 720
 2. Read [README.md](../README.md) for usage instructions
 3. Run `python main_module/theremin_main.py`
 4. Consult [docs/](../docs/) for additional documentation
-
----
-
-**Need help?** Consult the Troubleshooting section above or review the other documents in the `docs/` folder.

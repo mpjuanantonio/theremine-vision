@@ -52,33 +52,38 @@ python main_module/theremin_main.py --width 1280 --height 720
 ### Right Hand - Pitch & Vibrato
 
 #### Y-Axis → Pitch Control
+
 - **Top position** (Y = 0.0) → High pitch (~2000 Hz)
 - **Middle position** (Y = 0.5) → Mid pitch (~632 Hz)
 - **Bottom position** (Y = 1.0) → Low pitch (~200 Hz)
 
 #### Pinch Gesture → Vibrato Control
+
 - **Fingers together** (pinch ≤ 0.02) → Minimal vibrato
 - **Fingers apart** (pinch ≥ 0.15) → Maximum vibrato depth
 
 ### Left Hand - Volume, Reverb & Wave Shape
 
 #### X-Axis → Volume Control
+
 - **Left position** (X = 0.0) → Silence (0%)
 - **Center position** (X = 0.5) → Maximum volume (100%)
 - Volume zone limited to left half of screen
 
 #### Y-Axis → Reverb Control
+
 - **Top position** (Y ≤ 0.30) → Maximum reverb (0.8s delay)
 - **Bottom position** (Y ≥ 0.85) → Minimum reverb (0.1s delay)
 
 #### Pinch Gesture → Toggle Waveform Type
+
 - Do the OK gesture to change the waveform type instead of using key "s"
 
 ## System Requirements
 
 - Python 3.10, 3.11, or 3.12 (3.11 recommended)
-- Linux (Ubuntu 22.04 or later)
 - Functional webcam and audio output
+- Linux distro compatible with apt-get or Windows
 
 ## Project Structure
 
@@ -150,7 +155,7 @@ synthesizer.cleanup()
 
 - **No audio output**: Verify PyAudio installation (`pip list | grep pyaudio`)
 - **Hands not detected**: Check lighting and webcam angle
-- **Compilation errors**: See [Installation Guide](docs/INSTALLATION.md#troubleshooting)
+- **Compilation errors**: See [Installation Guide](docs/INSTALLATION.md)
 
 ## Technical Specifications
 
