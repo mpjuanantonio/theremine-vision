@@ -2,25 +2,28 @@
 
 ## Overview
 
-The video module provides real-time hand tracking using MediaPipe, detecting 21 reference points (landmarks) per hand and calculating normalized positions.
+The video module provides real-time hand tracking using MediaPipe, detecting 21 reference points (landmarks) per hand and calculating normalized positions. It also detects pinch gestures for vibrato control and waveform switching.
 
 ## Components
 
+### video_processor.py
+
+Main class encapsulating video capture and hand tracking:
+- Video capture initialization with configurable resolution
+- MediaPipe Hands integration
+- Frame processing and hand detection
+- FPS calculation
+- Automatic fullscreen resolution detection
+
 ### handPositionCalculator.py
 
-Main class implementing:
+Position and gesture calculation class:
 - Hand position calculation using 6 key points
+- **Pinch gesture detection** for vibrato control with right hand
+- **"Ok gesture" detection** for toggle the waveform type with left hand
 - Normalization to 0.0-1.0 values
 - Separate handling for left and right hands
 - Automatic reset when hands are not detected
-
-### vision_stream.py
-
-Visualization program displaying:
-- Real-time hand tracking
-- FPS and processing time
-- Hand X, Y positions
-- Video recording capability
 
 ## Hand Tracking Operation
 
@@ -57,113 +60,92 @@ avg_y = (y₀ + y₄ + y₈ + y₁₂ + y₁₆ + y₂₀) / 6
 - Greater stability (reduced jitter)
 - Improved accuracy
 - More robust to occlusions
+- Better control for user
+
+### Pinch Gesture Detection
+
+For vibrato control, the system detects the distance between thumb and index finger:
+
+```python
+# Landmarks used for pinch detection
+THUMB_TIP = 4
+INDEX_FINGER_TIP = 8
+
+# Calculate Euclidean distance
+dx = thumb_x - index_x
+dy = thumb_y - index_y
+pinch_distance = sqrt(dx² + dy²)
+```
+
+**Pinch Mapping:**
+```
+Distance: 0.02 (fingers together) → Minimal vibrato
+Distance: 0.15 (fingers apart)    → Maximum vibrato
+```
+
+### Left Hand Pinch Gesture (Waveform Toggle)
+
+The left hand pinch gesture is used to cycle through waveform types:
+
+```python
+# Same landmarks as right hand pinch
+THUMB_TIP = 4
+INDEX_FINGER_TIP = 8
+
+# Pinch threshold for activation
+PINCH_THRESHOLD = 0.05  # Fingers must be very close
+```
+
+**Waveform Cycle:**
+```
+Pinch detected → Toggle to next waveform:
+sine → square → saw → triangle → sine → ...
+```
+
+**Debounce:** The system includes a cooldown to prevent multiple toggles from a single pinch gesture.
 
 ### Position Mapping
 
-#### Right Hand (Y-Axis) → Pitch
+#### Right Hand → Pitch & Vibrato
 
+**Y-Axis → Pitch:**
 ```
 Normalized Y: 0.0 (top) → 1.0 (bottom)
 Hand at top = High notes
 Hand at bottom = Low notes
 ```
 
-#### Left Hand (X-Axis) → Volume
-
+**Pinch → Vibrato:**
 ```
-Normalized X: 0.0 (left) → 1.0 (right)
+Pinch distance controls vibrato depth
+Fingers together = No vibrato
+Fingers apart = Maximum vibrato
+```
+
+#### Left Hand → Volume, Reverb & Waveform
+
+**X-Axis → Volume:**
+```
+Normalized X: 0.0 (left) → 0.5 (center)
 Hand at left = Silence
-Hand at right = Maximum volume
+Hand at center = Maximum volume
+(Right half of screen ignored for volume)
 ```
 
-## Programmatic Usage
-
-```python
-from handPositionCalculator import HandPositionCalculator
-import mediapipe as mp
-
-# Initialize
-calculator = HandPositionCalculator(frame_width=1440, frame_height=810)
-
-# In detection loop
-for hand_idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
-    hand_label = results.multi_handedness[hand_idx].classification[0].label
-    calculator.update_hand_position(hand_landmarks, hand_label)
-
-# Get values
-right_y = calculator.get_right_hand_y()  # float: 0.0-1.0 or None
-left_x = calculator.get_left_hand_x()    # float: 0.0-1.0 or None
-
-# Reset when no hands detected
-calculator.reset()
+**Y-Axis → Reverb:**
+```
+Normalized Y: 0.30 (top zone) → 0.85 (bottom zone)
+Hand at top = Maximum reverb (0.8s delay)
+Hand at bottom = Minimum reverb (0.1s delay)
 ```
 
-## HandPositionCalculator API
-
-### Methods
-
-#### `__init__(frame_width, frame_height)`
-
-Initializes calculator with frame dimensions.
-
-```python
-calc = HandPositionCalculator(1440, 810)
+**Pinch → Waveform Toggle:**
+```
+Pinch gesture (thumb + index together) = Cycle waveform
+sine → square → saw → triangle → sine
 ```
 
-#### `update_hand_position(hand_landmarks, hand_label)`
 
-Updates position based on MediaPipe landmarks.
-
-```python
-calc.update_hand_position(hand_landmarks, 'Right')
-calc.update_hand_position(hand_landmarks, 'Left')
-```
-
-#### `get_right_hand_y()` → float | None
-
-Returns normalized Y position of right hand.
-
-```python
-y = calc.get_right_hand_y()  # 0.0-1.0 or None
-```
-
-#### `get_left_hand_x()` → float | None
-
-Returns normalized X position of left hand.
-
-```python
-x = calc.get_left_hand_x()   # 0.0-1.0 or None
-```
-
-#### `reset()`
-
-Resets both positions to None.
-
-```python
-calc.reset()
-```
-
-## Visualization
-
-### On-Screen Display
-
-```
-┌─────────────────────────────────────┐
-│ FPS: XX                             │
-│ Time: XX.Xms                        │
-│ Right Hand Y: 0.XXXX (magenta)      │
-│ Left Hand X: 0.XXXX (cyan)          │
-│                                     │
-│ [Hand landmarks drawn on frame]     │
-└─────────────────────────────────────┘
-```
-
-### Display Colors
-
-- **Magenta** (230, 66, 245): Right hand and Y-axis
-- **Cyan** (66, 245, 230): Left hand and X-axis
-- **Green** (0, 255, 0): Hand labels
-- **White**: Landmark points
 
 ## Technical Specifications
 
@@ -172,6 +154,24 @@ calc.reset()
 - **Precision**: 0.0001 in normalized positions
 - **FPS**: 30-60 (hardware dependent)
 - **Latency**: ~33ms at 30 FPS
+- **Pinch Detection**: Thumb-Index distance (landmarks 4 and 8)
+- **Position Averaging**: 6-point method for stability
+- **Screen Detection**: Automatic via tkinter
+
+## Fullscreen Resolution
+
+The system automatically detects screen resolution using tkinter:
+
+```python
+import tkinter as tk
+
+def get_screen_resolution():
+    root = tk.Tk()
+    width = root.winfo_screenwidth()
+    height = root.winfo_screenheight()
+    root.destroy()
+    return width, height
+```
 
 ## Limitations
 
@@ -187,6 +187,7 @@ calc.reset()
 - Improve lighting conditions
 - Keep hands within frame
 - Use contrasting background
+- You can also change variables at `video_procesor.py` -> `min_detection_confidence` and `min_tracking_confidence` for find your better config.
 
 ### Unstable hand detection
 
@@ -198,8 +199,13 @@ calc.reset()
 
 - Normal for points near frame edges
 - Smoothed in audio module with averages
-- Can be improved with additional Kalman filter
+
+### Pinch detection unreliable
+
+- Ensure good lighting on hands
+- Keep fingers visible to camera
+- Adjust PINCH_MIN/PINCH_MAX thresholds if needed
 
 ---
 
-For complete implementation details, see source code in handPositionCalculator.py
+For complete implementation details, see source code in `video_module/handPositionCalculator.py` and `video_module/video_processor.py`

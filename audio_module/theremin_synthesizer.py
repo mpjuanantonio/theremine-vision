@@ -22,11 +22,18 @@ class ThereminSynthesizer:
         self.wave_type = wave_type # Tipo de onda
         self.buffer_size = buffer_size # Tamaño del buffer
 
-        # Configuración de sonido enriquecido
-        self.vibrato_rate = 5.0  # Hz
-        self.vibrato_depth = 0.05  # Profundidad del vibrato
+        # Configuración de mejoras de sonido
+        self.vibrato_rate = 5.0  # Hz - Velocidad del vibrato
+        self.vibrato_depth = 0.001  # Profundidad del vibrato (valor por defecto mínimo)
         self.harmonics = [1.0, 0.5, 0.25, 0.125]  # Amplitudes de armónicos (Fundamental, 2do, 3ro, 4to)
-
+        # Configuración de Reverb (Eco simple)
+        self.reverb_enabled = True
+        self.delay_seconds = 0.2
+        self.delay_feedback = 0.4
+        self.delay_mix = 0.3
+        self.delay_buffer_size = int(self.sample_rate * self.delay_seconds)
+        self.delay_buffer = np.zeros(self.delay_buffer_size, dtype=np.float32)
+        self.delay_index = 0
         # Estado actual, con el que empieza la aplicación
         self.current_frequency = 440.0  # A4 por defecto
         self.current_volume = 0.0  # Silencio por defecto
@@ -42,14 +49,7 @@ class ThereminSynthesizer:
         self.phase = 0.0
         self.lfo_phase = 0.0  # Fase para el oscilador de baja frecuencia (LFO)
         
-        # Configuración de Reverb (Eco simple)
-        self.reverb_enabled = True
-        self.delay_seconds = 0.2
-        self.delay_feedback = 0.4
-        self.delay_mix = 0.3
-        self.delay_buffer_size = int(self.sample_rate * self.delay_seconds)
-        self.delay_buffer = np.zeros(self.delay_buffer_size, dtype=np.float32)
-        self.delay_index = 0
+        
 
         # Thread control
         self.lock = threading.Lock()
@@ -118,7 +118,8 @@ class ThereminSynthesizer:
 
         with self.lock:
             if vibrato_depth is not None:
-                self.vibrato_depth = np.clip(vibrato_depth, 0.0, 0.2)
+                # Limitar al rango real usado (0.001 a 0.021)
+                self.vibrato_depth = np.clip(vibrato_depth, 0.001, 0.025)
                 
             if delay_seconds is not None:
                 # Si cambia el tiempo de delay, necesitamos redimensionar el buffer
@@ -153,6 +154,7 @@ class ThereminSynthesizer:
         # Calcular frecuencia instantánea con vibrato
         lfo_increment = 2 * np.pi * self.vibrato_rate / self.sample_rate
         lfo_phases = self.lfo_phase + np.arange(num_samples) * lfo_increment
+        # Actualizamos la fase en la que se encuentra el LFO
         self.lfo_phase = lfo_phases[-1] % (2 * np.pi)
         
         # Modulación de frecuencia

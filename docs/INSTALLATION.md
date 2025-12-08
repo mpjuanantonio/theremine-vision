@@ -38,7 +38,7 @@ bash setup.sh
 ```bash
 # 1. Install system dependencies
 sudo apt-get update
-sudo apt-get install python3.11 python3.11-venv python3.11-dev portaudio19-dev
+sudo apt-get install python3.11 python3.11-venv python3.11-dev portaudio19-dev python3-tk
 
 # 2. Clone repository
 git clone https://github.com/mpjuanantonio/theremine-vision.git
@@ -56,7 +56,7 @@ pip install -r requirements.txt
 python -c "import cv2, numpy, mediapipe, pyaudio; print('Installation successful')"
 
 # 6. Run!
-python theremin_main.py
+python main_module/theremin_main.py
 ```
 
 ---
@@ -78,17 +78,18 @@ sudo apt-get install python3.11
 
 ### Step 2: Install System Dependencies
 
-Required for PyAudio compilation:
+Required for PyAudio compilation and screen detection:
 
 ```bash
 sudo apt-get update
-sudo apt-get install python3.11-dev python3.11-venv portaudio19-dev
+sudo apt-get install python3.11-dev python3.11-venv portaudio19-dev python3-tk
 ```
 
 **What gets installed:**
 - `python3.11-dev`: Python headers for compiling extensions
 - `python3.11-venv`: Virtual environment tool
-- `portaudio19-dev`: Audio libraries
+- `portaudio19-dev`: Audio libraries for PyAudio
+- `python3-tk`: Tkinter for screen resolution detection
 
 ### Step 3: Clone Repository
 
@@ -129,6 +130,8 @@ pip install -r requirements.txt
 - `numpy`: Numerical computations
 - `mediapipe`: Hand detection and tracking
 - `pyaudio`: Real-time audio synthesis
+
+**Note**: `tkinter` is installed via system package (`python3-tk`), not pip.
 
 ### Step 6: Verify Installation
 
@@ -221,6 +224,15 @@ sudo apt-get install build-essential python3.11-dev portaudio19-dev
 pip install --no-cache-dir pyaudio
 ```
 
+### Error: `No module named 'tkinter'`
+
+**Cause**: Tkinter not installed (needed for fullscreen detection)
+
+**Solution**:
+```bash
+sudo apt-get install python3-tk
+```
+
 ---
 
 ## System Verification
@@ -296,7 +308,7 @@ pip install -r requirements.txt
 ls -la /dev/video*
 
 # Try another camera if available
-python theremin_main.py --source 1
+python main_module/theremin_main.py --source 1
 ```
 
 ### No audio output
@@ -313,7 +325,17 @@ alsamixer
 
 - Improve camera lighting
 - Close other CPU-intensive applications
-- Increase buffer_size in theremin_main.py
+- Increase buffer_size in configuration
+
+### Fullscreen not working
+
+```bash
+# Verify tkinter is installed
+python -c "import tkinter; print('Tkinter OK')"
+
+# Run with custom resolution if needed
+python main_module/theremin_main.py --width 1280 --height 720
+```
 
 ---
 
@@ -321,7 +343,7 @@ alsamixer
 
 1. Installation completed
 2. Read [README.md](../README.md) for usage instructions
-3. Run `python theremin_main.py`
+3. Run `python main_module/theremin_main.py`
 4. Consult [docs/](../docs/) for additional documentation
 
 ---

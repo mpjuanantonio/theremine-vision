@@ -20,8 +20,8 @@ LEFT_ZONE_LIMIT = 0.5   #Restricción para que no se cruce la zona con la otra m
 # Vibrato
 PINCH_MIN = 0.02        # Distancia minima para minimo vibrato
 PINCH_MAX = 0.15        # Distancia maxima para maximo vibrato
-VIBRATO_MIN = 0.001     # Profundidad minima de vibrato
-VIBRATO_MAX = 0.02      # Profundidad maxima de vibrato
+VIBRATO_MIN = 0.001     # Profundidad minima de vibrato (valor absoluto)
+VIBRATO_MAX = 0.025     # Profundidad maxima de vibrato (valor absoluto)
 
 # Reverb 
 REVERB_TOP = 0.30      # Posición Y para reverb máximo
@@ -54,7 +54,7 @@ def integrate_audio_with_tracking(position_calculator, synthesizer):
     if right_pinch is not None:
         # Normalizar pinch y calculamos la profundidad del vibrato
         norm_pinch = max(0.0, min(1.0, (right_pinch - PINCH_MIN) / (PINCH_MAX - PINCH_MIN)))
-        vibrato_depth = VIBRATO_MIN + (norm_pinch * VIBRATO_MAX) 
+        vibrato_depth = VIBRATO_MIN + (norm_pinch * (VIBRATO_MAX - VIBRATO_MIN)) 
 
     # CALCULO DE LA REVERB
     delay_seconds = None
