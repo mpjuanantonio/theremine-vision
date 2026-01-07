@@ -1,6 +1,6 @@
 # Virtual Theremin - Real-Time Hand Tracking Audio Synthesis
 
-An inspired virtual theremin system that uses MediaPipe hand tracking to control audio synthesis in real time. Control pitch with your right hand and volume with your left hand, plus real-time vibrato and reverb effects.
+A virtual system inspired by the Theremine that uses MediaPipe hand tracking to control audio synthesis in real time. Control pitch with your right hand and volume with your left hand, plus real-time vibrato and reverb effects.
 
 ## Features
 
